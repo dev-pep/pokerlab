@@ -113,8 +113,13 @@ struct Valor _pl_valorMano(struct Carta *cartas, int n)
             else if(count2 < 2)   // un segundo trío contará como pareja del full, si procede
                 val2[count2++] = i;
         }
-        else if((freq == 2) && (count2 < 2))
-            val2[count2++] = i;
+        else if(freq == 2)
+        {
+            if(count2 < 2)
+                val2[count2++] = i;
+            else
+                val1[count1++] = i;    // una tercera pareja contará como kicker de la doble pareja
+        }
         else if((freq == 1) && (count1 < 5))
             val1[count1++] = i;
     }
@@ -143,7 +148,7 @@ struct Valor _pl_valorMano(struct Carta *cartas, int n)
     for(i = 13; i > 0; i--)
         if(rankFreq[i][0] + rankFreq[i][1] + rankFreq[i][2] + rankFreq[i][3] == 4)
             for(j = 13; j > 0; j--)
-                if(rankFreq[j][0] + rankFreq[j][1] + rankFreq[j][2] + rankFreq[j][3] == 1)
+                if((i != j) && (rankFreq[j][0] + rankFreq[j][1] + rankFreq[j][2] + rankFreq[j][3] > 0))
                 {
                     resul.valor = FOUROAK;
                     resul.kickers[0] = i;
