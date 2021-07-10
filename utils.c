@@ -1,6 +1,14 @@
-#include "utils.h"
+static int _rankToNum(char c)
+{
+    // Retorna número (0-12) a partir de carácter de rank (A, K, Q,...)
+    char ranks[] = "A23456789TJQK";
+    for(int i = 0; i < 13; i++)
+        if(c == ranks[i])
+            return i;
+    return -1;
+}
 
-struct Carta _pl_intToCard(int carta)
+static struct Carta _intToCard(int carta)
 {
     // Recibe carta numérica (0-51) y retorna struct Carta
     struct Carta resul;
@@ -14,7 +22,7 @@ struct Carta _pl_intToCard(int carta)
     return resul;
 }
 
-struct Carta _pl_strToCard(PyObject *carta)
+static struct Carta _strToCard(PyObject *carta)
 {
     // Recibe carta tipo "Ts" (en un string Python) y retorna struct Carta
     struct Carta resul = {-1};  // valor de error, por defecto
@@ -44,7 +52,7 @@ struct Carta _pl_strToCard(PyObject *carta)
     return resul;
 }
 
-struct Valor _pl_valorMano(struct Carta *cartas, int n)
+static struct Valor _valorMano(struct Carta *cartas, int n)
 {
     // Recibe un apuntador a 5 o 7 cartas y retorna su valor como mano de póker.
     struct Valor resul = {-1, {-1, -1, -1, -1, -1}};
