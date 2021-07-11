@@ -1,6 +1,6 @@
 void _rangeSetPercent(int n, int val)
 {
-    // Establece (o borra) la tabla preflop a partir de un porcentaje
+    // Establece (o borra) la tabla preflop a partir de un porcentaje de combos
     const char *pockets[] = {"AA", "KK", "QQ", "JJ", "TT", "99", "88", "AKs", "77", 
         "AQs", "AJs", "AKo", "ATs", "AQo", "AJo", "KQs", "66", "A9s", "ATo", "KJs", 
         "A8s", "KTs", "KQo", "A7s", "A9o", "KJo", "55", "QJs", "K9s", "A5s", "A6s", 
@@ -17,11 +17,19 @@ void _rangeSetPercent(int n, int val)
         "82s", "73s", "93o", "65o", "53s", "63s", "84o", "92o", "43s", "74o", "72s", 
         "54o", "64o", "52s", "62s", "83o", "42s", "82o", "73o", "53o", "63o", "32s", 
         "43o", "72o", "52o", "62o", "42o", "32o"};
-    int n_manos = n * 169 / 100;
-    for(int i = 0; i < n_manos; i++)
+    int n_combos = n * 1326 / 100;
+    int contadorCombos = 0, contadorPares = 0;
+    struct Coords point;
+    while(contadorCombos < n_combos)
     {
-        struct Coords point = _rangeParToCoords(pockets[i]);
+        point = _rangeParToCoords(pockets[contadorPares++]);
         _range[point.x][point.y] = val;
+        if(point.x == point.y)
+            contadorCombos = contadorCombos + 6;  // pocket pair
+        else if(point.x > point.y)
+            contadorCombos = contadorCombos + 4;  // suited hand
+        else
+            contadorCombos = contadorCombos + 12;  // offsuit hand
     }
 }
 
@@ -36,10 +44,7 @@ static void _rangeInvert()    // invierte tabla preflop
 {
     for(int i = 0; i < 13; i++)
         for(int j = 0; j < 13; j++)
-        {
-            int v = _range[i][j] - 1;
-            _range[i][j] = v && v;
-        }
+            _range[i][j] = _range[i][j] - 1;  // como es _Bool cambia valor
 }
 
 static void _rangePrintTable()
