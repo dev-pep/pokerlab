@@ -1,11 +1,31 @@
+static _Bool _charIsRank(char c)
+{
+    char ranks[] = "23456789TJQKA";
+    for(int i = 0; i < 13; i++)
+        if(c == ranks[i])
+            return 1;
+    return 0;
+}
+
 static int _rankToNum(char c)
 {
-    // Retorna número (0-12) a partir de carácter de rank (A, K, Q,...)
-    char ranks[] = "A23456789TJQK";
+    // Retorna número (0-12) a partir de carácter de rank (2, 3,..., K, A)
+    // o -1 en caso de error.
+    char ranks[] = "23456789TJQKA";
     for(int i = 0; i < 13; i++)
         if(c == ranks[i])
             return i;
     return -1;
+}
+
+static char _numToRank(int n)
+{
+    // Retorna carácter de rank (2, 3,..., K, A) a partir de número (0-12)
+    // o -1 en caso de error.
+    char ranks[] = "23456789TJQKA";
+    if(n < 0 || n > 12)
+        return -1;
+    return ranks[n];
 }
 
 static struct Carta _intToCard(int carta)

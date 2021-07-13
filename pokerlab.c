@@ -7,77 +7,146 @@
 // Definición de funciones "privadas" *****************************************
 
 #include "utils.c"
+#include "rangeparse.c"
 #include "ranges.c"
 
 // Definición de funciones a exportar *****************************************
 
-static PyObject *pl_rangePercent(PyObject *self, PyObject *args)
+static PyObject *pl_rangeSet(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    // Establece tabla preflop a partir de porcentaje
-    int n = 0;
-    const char *sp = NULL;
-    if(!PyArg_ParseTuple(args, "|is", &n, &sp))
-    {
-        PyErr_SetString(PyExc_TypeError, "Argumentos esperados: int, string.");
-        return NULL;
-    }
-    if(sp && !strcmp(sp, "clear"))
-    {
-        _rangeClear();
-        Py_RETURN_NONE;
-    }
-    if(sp && !strcmp(sp, "invert"))
-    {
-        _rangeInvert();
-        Py_RETURN_NONE;
-    }
-    if(n < 0 || n > 100)
+    // Establece tabla preflop (hero o villain) a partir de un string
+    // que define el range.
+    // Véase rangeparse.c para sintaxis de un range de entrada.
+    // Argumentos desde Python: (action='set', range='', villain=False)
+    // posicionales o keyword.
+    char *keys[] = {"action", "range", "villain", NULL};
+    char *action = "set", *range = "";
+    PyObject *villain = Py_False;
+    _Bool (*r)[13], parseOK = 1;
+    if(!PyArg_ParseTupleAndKeywords(args, kwargs, "|ssO", keys,
+        &action, &range, &villain))
     {
         PyErr_SetString(PyExc_TypeError,
-            "Se espera un entero 0-100 para acciones set, add y subtract.");
+            "Argumentos esperados (opcionales): "
+            "action(string), range(string), villain(boolean).");
         return NULL;
     }
-    if(!sp || !strcmp(sp, "set"))
+    if(!PyBool_Check(villain))
     {
-        _rangeClear();
-        _rangeSetPercent(n, 1);
+        PyErr_SetString(PyExc_TypeError,
+            "Argumento 'villain' debe ser booleano");
+        return NULL;
     }
-    else if(!strcmp(sp, "add"))
-        _rangeSetPercent(n, 1);
-    else if(!strcmp(sp, "subtract"))
-        _rangeSetPercent(n, 0);
+    if(villain == Py_True)
+        r = _rangeVillain;
+    else
+        r = _rangeHero;
+    if(!strcmp(action, "clear"))
+    {
+        _rangeClear(r);
+        return _rangeGetString(r);
+    }
+    else if(!strcmp(action, "invert"))
+    {
+        _rangeInvert(r);
+        return _rangeGetString(r);
+    }
+    if(!strcmp(action, "set"))
+    {
+        _rangeClear(_rangeTMP);
+        parseOK = _rangeParse(range, 1);
+    }
+    else if(!strcmp(action, "add"))
+    {
+        _rangeCopy(r, _rangeTMP);
+        parseOK = _rangeParse(range, 1);
+    }
+    else if(!strcmp(action, "subtract"))
+    {
+        _rangeCopy(r, _rangeTMP);
+        parseOK = _rangeParse(range, 0);
+    }
     else
     {
-        PyErr_SetString(PyExc_TypeError,
-            "Acciones: set (default), add, subtract, clear, invert.");
+        PyErr_SetString(PyExc_ValueError,
+            "Acciones: 'set' (default), 'add', 'subtract', 'clear', 'invert'.");
         return NULL;
     }
+    if(!parseOK)
+    {
+        PyErr_SetString(PyExc_ValueError,
+            "Formato incorrecto.");
+        return NULL;
+    }
+    _rangeCopy(_rangeTMP, r);
+    return _rangeGetString(r);
+}
+
+static PyObject *pl_rangeGet(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    // Retorna en un string el range actual (hero o villain), o la
+    // tabla preflop en una tupla.
+    // Argumentos desde Pyhon: (table=False, villain=False),
+    // posicionales o keyword.
+    char *keys[] = {"table", "villain", NULL};
+    PyObject *table = Py_False, *villain = Py_False;
+    _Bool (*r)[13];
+    if(!PyArg_ParseTupleAndKeywords(args, kwargs, "|OO", keys,
+        &table, &villain))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "Argumentos esperados (opcionales): "
+            "table(boolean), villain(boolean).");
+        return NULL;
+    }
+    if(!PyBool_Check(villain) || !PyBool_Check(table))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "Argumentos deben ser booleanos.");
+        return NULL;
+    }
+    if(villain == Py_True)
+        r = _rangeVillain;
+    else
+        r = _rangeHero;
+    if(table == Py_True)
+        return _rangeGetTable(r);
+    else
+        return _rangeGetString(r);
+}
+
+static PyObject *pl_rangePrintTable(PyObject *self, PyObject *args)
+{
+    // Muestra tabla de range actual (de hero o villain).
+    // Argumentos desde Pyhon: un booleano posicional opcional.
+    PyObject *villain = NULL;
+    _Bool (*r)[13] = _rangeHero;
+    if(!PyArg_ParseTuple(args, "|O", &villain))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "Se esperaba 1 argumento posicional (opcional)");
+        return NULL;
+    }
+    if(villain)
+    {
+        if(!PyBool_Check(villain))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                "Argumento debe ser booleano");
+            return NULL;
+        }
+        if(villain == Py_True)
+            r = _rangeVillain;
+    }
+    _rangePrintTable(r);
     Py_RETURN_NONE;
 }
 
-static PyObject *pl_rangePrint(PyObject *self, PyObject *args, PyObject *kwargs)
-{
-    // Muestra range actual en pantalla
-    PyObject *tabla = NULL, *tablaSimple = NULL;
-    char *keys[] = {"tabla", "tablaSimple", NULL};
-    // Borrowed references (tabla, tablaSimple):
-    if(!PyArg_ParseTupleAndKeywords(args, kwargs, "|$OO", keys, &tabla, &tablaSimple))
-    {
-        PyErr_SetString(PyExc_ValueError,
-            "Keyword arguments booleanos (opcionales): tabla, tablaSimple.");
-        return NULL;
-    }
-    if(tabla == Py_True)
-        _rangePrintTable();
-    else if(tablaSimple == Py_True)
-        _rangePrintSimpleTable();
-    else
-        _rangePrintRange();
-    Py_RETURN_NONE;
-}
-    
 static PyObject *pl_valorMano(PyObject *self, PyObject *args)
 {
+    // Retorna valor de la mano en una tupla (figura + kickers).
+    // Argumentos desde Python: 5 o 7 cartas de tipo entero (0-51) o
+    // string ('AKs', 'JT',...). Posicionales.
     int i, j;
     struct Carta cartas[7], c;
     struct Valor resultado;
@@ -147,16 +216,19 @@ static PyObject *test(PyObject *self, PyObject *args, PyObject *kwargs)
     printf("%d %d %d %d %d\n", a, b, c, d, e);
     Py_RETURN_NONE;
 }
+
 // Definición del módulo Python ***********************************************
 
 // Relación de funciones a exportar:
 static PyMethodDef PokerlabFuns[] = {
+    {"pl_rangeSet", (PyCFunction)pl_rangeSet, METH_VARARGS | METH_KEYWORDS,
+     "Establece el rango actual (de hero o villain) a partir de un string"},
+    {"pl_rangeGet", (PyCFunction)pl_rangeGet, METH_VARARGS | METH_KEYWORDS,
+     "Retorna string o tupla que define el rango actual (de hero o villain)"},
+    {"pl_rangePrintTable", pl_rangePrintTable, METH_VARARGS,
+     "Muestra el rango actual (de hero o villain) en una tabla"},
     {"pl_valorMano", pl_valorMano, METH_VARARGS,
      "Comprueba el valor de una mano (5 o 7 cartas)"},
-    {"pl_rangePercent", pl_rangePercent, METH_VARARGS,
-     "Establece el rango actual a partir de un porcentaje (entero)"},
-    {"pl_rangePrint", (PyCFunction)pl_rangePrint, METH_VARARGS | METH_KEYWORDS,
-     "Muestra el rango actual en pantalla"},
     {"test", (PyCFunction)test, METH_VARARGS | METH_KEYWORDS,
      "Función inútil para hacer pruebas"},
     {NULL, NULL, 0, NULL}
@@ -175,7 +247,6 @@ static struct PyModuleDef pokerlab = {
 PyMODINIT_FUNC PyInit_pokerlab()
 {
     PyObject *modulo;
-
     modulo = PyModule_Create(&pokerlab);
     return modulo;
 }
