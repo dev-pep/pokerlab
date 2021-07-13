@@ -18,39 +18,51 @@ struct Carta
     int suit;    // 0-3
 };
 
-struct Coords
-{
-    int x, y;    // tabla preflop, con 0,0 en upper left
-};
-
 // Variables globales (no exportadas a Python) ********************************
 
-// Tabla preflop:
-static _Bool _range[13][13];    // [x][y], con [0][0] upper left
+// Tablas preflop:
+static _Bool _rangeHero[13][13];    // [x][y], con [0][0] upper left
+static _Bool _rangeVillain[13][13];
+static _Bool _rangeTMP[13][13];
 
 // Funciones "privadas" *******************************************************
 
 // utils.c
+static _Bool        _charIsRank(char c);
 static int          _rankToNum(char c);
+static char         _numToRank(int n);
 static struct Carta _intToCard(int carta);
 static struct Carta _strToCard(PyObject *carta);
 static struct Valor _valorMano(struct Carta *cartas, int n);
 
+// rangeparse.c
+static int   _rangeParsePAIR(const char *rangeStr, int index, _Bool val);
+static int   _rangeParseCONN(const char *rangeStr, int index, _Bool val);
+static int   _rangeParseOTHER(const char *rangeStr, int index, _Bool val);
+static int   _rangeParsePERCENT(const char *rangeStr, int index, _Bool val);
+static int   _rangeParseRANGO(const char *rangeStr, int index, _Bool val);
+static _Bool _rangeParse(const char *rangeStr, _Bool val);
+static int   _rangeParseSkip(const char *rangeStr, int index);
+static _Bool _rangeParsePinta(int x0, int y0, int x1, int y1, _Bool val);
+
 // ranges.c
-static void          _rangeSetPercent(int n, int val);
-static void          _rangeClear();
-static void          _rangeInvert();
-static void          _rangePrintTable();
-static void          _rangePrintSimpleTable();
-static void          _rangePrintRange();
-static int           _rangeRankToCoord(char c);
-static struct Coords _rangeParToCoords(const char *par);
-static void          _rangeCoordsToPar(struct Coords c, char *par, _Bool onlyInRange);
+static void       _rangeSetPercent(_Bool r[13][13], int n, int val);
+static void       _rangeClear(_Bool r[13][13]);
+static void       _rangeInvert(_Bool r[13][13]);
+static void       _rangeCopy(const _Bool source[13][13], _Bool dest[13][13]);
+static void       _rangePrintTable(_Bool r[13][13]);
+static PyObject * _rangeGetTable(_Bool r[13][13]);
+static int        _rangeWriteString(int x0, int y0, int x1, int y1,
+                                    char *buffer, int index);
+static PyObject * _rangeGetString(_Bool r[13][13]);
+static _Bool      _rangeParToCoords(const char *par, int *xptr, int *yptr);
+static _Bool      _rangeCoordsToPar(int x, int y, char *par);
 
 // Funciones a exportar *******************************************************
 
-static PyObject *pl_rangePercent(PyObject *self, PyObject *args);
-static PyObject *pl_rangePrint(PyObject *self, PyObject *args, PyObject *kwargs);
+static PyObject *pl_rangeSet(PyObject *self, PyObject *args, PyObject *kwargs);
+static PyObject *pl_rangeGet(PyObject *self, PyObject *args, PyObject *kwargs);
+static PyObject *pl_rangePrintTable(PyObject *self, PyObject *args);
 static PyObject *pl_valorMano(PyObject *self, PyObject *args);
 static PyObject *test(PyObject *self, PyObject *args, PyObject *kwargs);
 
