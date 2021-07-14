@@ -22,7 +22,7 @@ void _rangeSetPercent(_Bool r[13][13], int n, int val)
     int x = 0, y = 0;    // inicializamos para evitar warnings
     while(contadorCombos < n_combos)
     {
-        _rangeParToCoords(pockets[contadorPares++], &x, &y);
+        _rangeParToCoords(pockets[contadorPares++], &x, &y, NULL, NULL);
         r[x][y] = val;
         if(x == y)
             contadorCombos = contadorCombos + 6;  // pocket pair
@@ -49,6 +49,7 @@ static void _rangeInvert(_Bool r[13][13])    // invierte tabla preflop
 
 static void _rangeCopy(const _Bool source[13][13], _Bool dest[13][13])
 {
+    // Copia una tabla preflop sobre otra.
     for(int i = 0; i < 13; i++)
         for(int j = 0; j < 13; j++)
             dest[i][j] = source[i][j];
@@ -132,10 +133,10 @@ static PyObject* _rangeGetTable(_Bool r[13][13])
 }
 
 static int _rangeWriteString(int x0, int y0, int x1, int y1,
-    char *buffer, int index)
+                             char *buffer, int index)
 {
-    // Función auxiliar para _rangeGetString(): escribe un fragmento
-    // de range en el buffer.
+    // Función auxiliar para _rangeGetString(): escribe un elemento
+    // del range en el buffer.
     // Retorna la posición del nuevo índice.
     int delta;
     if(index)    // no es el primer strip, con lo que hay que escribir coma
@@ -270,22 +271,48 @@ static PyObject* _rangeGetString(_Bool r[13][13])
     return range;    // pasamos ownership de 'range' al llamador
 }
 
-static _Bool _rangeParToCoords(const char *par, int *xptr, int *yptr)
+static _Bool _rangeParToCoords(const char *par, int *xptr, int *yptr,
+                               int *xptr2, int *yptr2)
 {
     // Coloca en (*xptr, *yptr) las coordenadas en tabla preflop
-    // a partir de un string tipo "AKs". Si hay error, retorna 0 (si no 1).
-    if(strlen(par) == 2)
+    // a partir de un string tipo "AKs". Si el string de entrada
+    // no especifica suitedness (como "AK" o "T8"),
+    // colocará ambos puntos de la tabla. Si se especifica, el segundo
+    // punto será (-1, -1), a no ser que 'xptr2' y 'yptr2' sean NULL
+    // (no pueden ser NULL si no se especifica suitedness).
+    // Si hay error, retorna 0 (si no 1).
+    if(strlen(par) == 2 && par[0] == par[1])    // pocket pair
     {
         int x;
-        if(par[0] != par[1])
-            return 0;
         x = _rankToNum(par[0]);
         if(x == -1)
             return 0;
         *xptr = 12 - x;
         *yptr = 12 - x;
+        if(xptr2 && yptr2)    // si no son NULL
+        {
+            *xptr2 = -1;
+            *yptr2 = -1;
+        }
     }
-    else if(strlen(par) == 3)
+    else if(strlen(par) == 2 && par[0] != par[1])    // suitedness indefinida
+    {
+        int x, y;
+        x = _rankToNum(par[0]);
+        y = _rankToNum(par[1]);
+        if(x == -1 || y == -1)
+            return 0;
+        if(x < y)
+            return 0;
+        *xptr = 12 - x;
+        *yptr = 12 - y;
+        // En este caso, 'xptr2' y 'yptr2' no pueden ser NULL:
+        if(!xptr2 || !yptr2)
+            return 0;
+        *xptr2 = 12 - y;
+        *yptr2 = 12 - x;
+    }
+    else if(strlen(par) == 3)    // suitedness definida
     {
         int x, y;
         x = _rankToNum(par[0]);
@@ -296,11 +323,21 @@ static _Bool _rangeParToCoords(const char *par, int *xptr, int *yptr)
         {
             *xptr = 12 - x;
             *yptr = 12 - y;
+            if(xptr2 && yptr2)    // si no son NULL
+            {
+                *xptr2 = -1;
+                *yptr2 = -1;
+            }
         }
         else if(par[2] == 's')
         {
             *xptr = 12 - y;
             *yptr = 12 - x;
+            if(xptr2 && yptr2)    // si no son NULL
+            {
+                *xptr2 = -1;
+                *yptr2 = -1;
+            }
         }
         else
             return 0;    

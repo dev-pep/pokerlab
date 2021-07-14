@@ -36,14 +36,11 @@ static struct Carta _strToCard(PyObject *carta);
 static struct Valor _valorMano(struct Carta *cartas, int n);
 
 // rangeparse.c
-static int   _rangeParsePAIR(const char *rangeStr, int index, _Bool val);
-static int   _rangeParseCONN(const char *rangeStr, int index, _Bool val);
-static int   _rangeParseOTHER(const char *rangeStr, int index, _Bool val);
-static int   _rangeParsePERCENT(const char *rangeStr, int index, _Bool val);
-static int   _rangeParseRANGO(const char *rangeStr, int index, _Bool val);
+static int   _rangeParseNextDelim(const char *buffer, int index);
 static _Bool _rangeParse(const char *rangeStr, _Bool val);
-static int   _rangeParseSkip(const char *rangeStr, int index);
-static _Bool _rangeParsePinta(int x0, int y0, int x1, int y1, _Bool val);
+static _Bool _rangeParsePintaLine(int x0, int y0, int x1, int y1, _Bool val);
+static _Bool _rangeParsePintaUp(int x, int y, _Bool val);
+static _Bool _rangeParsePintaDown(int x, int y, _Bool val);
 
 // ranges.c
 static void       _rangeSetPercent(_Bool r[13][13], int n, int val);
@@ -55,7 +52,8 @@ static PyObject * _rangeGetTable(_Bool r[13][13]);
 static int        _rangeWriteString(int x0, int y0, int x1, int y1,
                                     char *buffer, int index);
 static PyObject * _rangeGetString(_Bool r[13][13]);
-static _Bool      _rangeParToCoords(const char *par, int *xptr, int *yptr);
+static _Bool      _rangeParToCoords(const char *par, int *xptr, int *yptr,
+                                    int *xptr2, int *yptr2);
 static _Bool      _rangeCoordsToPar(int x, int y, char *par);
 
 // Funciones a exportar *******************************************************
