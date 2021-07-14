@@ -1,5 +1,6 @@
 static _Bool _charIsRank(char c)
 {
+    // Retorna verdadero si el carácter es un rank válido.
     char ranks[] = "23456789TJQKA";
     for(int i = 0; i < 13; i++)
         if(c == ranks[i])
@@ -30,7 +31,7 @@ static char _numToRank(int n)
 
 static struct Carta _intToCard(int carta)
 {
-    // Recibe carta numérica (0-51) y retorna struct Carta
+    // Recibe carta numérica (0-51) y retorna struct Carta.
     struct Carta resul;
     if((carta > 51) || (carta < 0))
     {
@@ -44,7 +45,7 @@ static struct Carta _intToCard(int carta)
 
 static struct Carta _strToCard(PyObject *carta)
 {
-    // Recibe carta tipo "Ts" (en un string Python) y retorna struct Carta
+    // Recibe carta tipo "Ts" (en un string Python) y retorna struct Carta.
     struct Carta resul = {-1};  // valor de error, por defecto
     if(PyUnicode_GetLength(carta) != 2)
         return resul;    // formato incorrecto
