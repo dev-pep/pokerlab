@@ -17,19 +17,27 @@ void _rangeSetPercent(_Bool r[13][13], int n, int val)
         "82s", "73s", "93o", "65o", "53s", "63s", "84o", "92o", "43s", "74o", "72s", 
         "54o", "64o", "52s", "62s", "83o", "42s", "82o", "73o", "53o", "63o", "32s", 
         "43o", "72o", "52o", "62o", "42o", "32o"};
-    int n_combos = n * 1326 / 100;
-    int contadorCombos = 0, contadorPares = 0;
+    double targetCombos = n * 1326.0 / 100;
+    int contadorCombos = 0, index = 0, incremento;
     int x = 0, y = 0;    // inicializamos para evitar warnings
-    while(contadorCombos < n_combos)
+    while(contadorCombos < targetCombos)
     {
-        _rangeParToCoords(pockets[contadorPares++], &x, &y, NULL, NULL);
+        if(pockets[index][0] == pockets[index][1])    // pocket pair
+            incremento = 6;
+        else if(pockets[index][2] == 's')    // suited hand
+            incremento = 4;
+        else                                 // offsuit hand
+            incremento = 12;
+        contadorCombos = contadorCombos + incremento;
+        index++;
+    }
+    // Veamos si sería mejor sin el último incremento:
+    if(contadorCombos - targetCombos > targetCombos - (contadorCombos - incremento))
+        index--;
+    for(int i = 0; i < index; i++)
+    {
+        _rangeParToCoords(pockets[i], &x, &y, NULL, NULL);
         r[x][y] = val;
-        if(x == y)
-            contadorCombos = contadorCombos + 6;  // pocket pair
-        else if(x > y)
-            contadorCombos = contadorCombos + 4;  // suited hand
-        else
-            contadorCombos = contadorCombos + 12;  // offsuit hand
     }
 }
 
