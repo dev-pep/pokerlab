@@ -86,7 +86,7 @@ static PyObject *pl_rangeGet(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     // Retorna en un string el range actual (hero o villain), o la
     // tabla preflop en una tupla.
-    // Argumentos desde Pyhon: (table=False, villain=False),
+    // Argumentos desde Python: (table=False, villain=False),
     // posicionales o keyword.
     char *keys[] = {"table", "villain", NULL};
     PyObject *table = Py_False, *villain = Py_False;
@@ -118,7 +118,7 @@ static PyObject *pl_rangeGet(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *pl_rangePrintTable(PyObject *self, PyObject *args)
 {
     // Muestra tabla de range actual (de hero o villain).
-    // Argumentos desde Pyhon: un booleano posicional opcional.
+    // Argumentos desde Python: un booleano posicional opcional.
     PyObject *villain = NULL;
     _Bool (*r)[13] = _rangeHero;
     if(!PyArg_ParseTuple(args, "|O", &villain))
