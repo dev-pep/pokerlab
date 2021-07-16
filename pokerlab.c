@@ -82,6 +82,34 @@ static PyObject *pl_rangeSet(PyObject *self, PyObject *args, PyObject *kwargs)
     return _rangeGetString(r);
 }
 
+static PyObject *pl_rangeGetPercent(PyObject *self, PyObject *args)
+{
+    // Retorna el porcentaje (float) que compone el range actual (de hero o villain).
+    // Argumentos desde Python: un booleano posicional opcional.
+    PyObject *villain = NULL, *resul;
+    _Bool (*r)[13] = _rangeHero;
+    if(!PyArg_ParseTuple(args, "|O", &villain))
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "Se esperaba 1 argumento posicional (opcional)");
+        return NULL;
+    }
+    if(villain)
+    {
+        if(!PyBool_Check(villain))
+        {
+            PyErr_SetString(PyExc_TypeError,
+                "Argumento debe ser booleano");
+            return NULL;
+        }
+        if(villain == Py_True)
+            r = _rangeVillain;
+    }
+    resul = PyFloat_FromDouble(_rangeGetPercent(r));
+    // La new reference obtenida se retorna a Python (se pasa ownership):
+    return resul;
+}
+
 static PyObject *pl_rangeGet(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     // Retorna en un string el range actual (hero o villain), o la
@@ -223,12 +251,14 @@ static PyObject *test(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyMethodDef PokerlabFuns[] = {
     {"pl_rangeSet", (PyCFunction)pl_rangeSet, METH_VARARGS | METH_KEYWORDS,
      "Establece el rango actual (de hero o villain) a partir de un string"},
+    {"pl_rangeGetPercent", pl_rangeGetPercent, METH_VARARGS,
+     "Retorna porcentaje del rango actual (de hero o villain) en un float"},
     {"pl_rangeGet", (PyCFunction)pl_rangeGet, METH_VARARGS | METH_KEYWORDS,
      "Retorna string o tupla que define el rango actual (de hero o villain)"},
     {"pl_rangePrintTable", pl_rangePrintTable, METH_VARARGS,
      "Muestra el rango actual (de hero o villain) en una tabla"},
     {"pl_valorMano", pl_valorMano, METH_VARARGS,
-     "Comprueba el valor de una mano (5 o 7 cartas)"},
+     "Comprueba el valor de una mano (5 o 7 cartas) y retorna tupla descriptiva"},
     {"test", (PyCFunction)test, METH_VARARGS | METH_KEYWORDS,
      "Función inútil para hacer pruebas"},
     {NULL, NULL, 0, NULL}

@@ -44,6 +44,7 @@ static _Bool _rangeParsePintaDown(int x, int y, _Bool val);
 
 // ranges.c
 static void       _rangeSetPercent(_Bool r[13][13], int n, int val);
+static double     _rangeGetPercent(_Bool r[13][13]);
 static void       _rangeClear(_Bool r[13][13]);
 static void       _rangeInvert(_Bool r[13][13]);
 static void       _rangeCopy(const _Bool source[13][13], _Bool dest[13][13]);
@@ -59,6 +60,7 @@ static _Bool      _rangeCoordsToPar(int x, int y, char *par);
 // Funciones a exportar *******************************************************
 
 static PyObject *pl_rangeSet(PyObject *self, PyObject *args, PyObject *kwargs);
+static PyObject *pl_rangeGetPercent(PyObject *self, PyObject *args);
 static PyObject *pl_rangeGet(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject *pl_rangePrintTable(PyObject *self, PyObject *args);
 static PyObject *pl_valorMano(PyObject *self, PyObject *args);

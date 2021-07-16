@@ -3,7 +3,7 @@
 import pokerlab
 
 print(f"Porcentaje;Manos;Acumulado")
-for i in range(0, 31):
+for i in range(0, 101):
     todos = pokerlab.pl_rangeSet(range=f"{i}%")
     if(i < 1):
         delta = ""

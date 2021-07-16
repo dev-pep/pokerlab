@@ -41,6 +41,23 @@ void _rangeSetPercent(_Bool r[13][13], int n, int val)
     }
 }
 
+double _rangeGetPercent(_Bool r[13][13])
+{
+    int contador = 0;
+    for(int i = 0; i < 13; i++)
+        for(int j = 0; j < 13; j++)
+            if(r[i][j])
+            {
+                if(i == j)
+                    contador = contador + 6;    // pocket pair
+                else if(i > j)
+                    contador = contador + 4;    // suited hand
+                else    // i < j
+                    contador = contador + 12;    // offsuit hand
+            }
+    return contador / 13.26;
+}
+
 static void _rangeClear(_Bool r[13][13])    // resetea tabla preflop
 {
     for(int i = 0; i < 13; i++)
