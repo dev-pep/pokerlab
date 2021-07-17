@@ -7,10 +7,47 @@
 // Definición de funciones "privadas" *****************************************
 
 #include "utils.c"
+#include "simulations.c"
 #include "rangeparse.c"
 #include "ranges.c"
 
 // Definición de funciones a exportar *****************************************
+
+static PyObject *pl_simHandVsHand(PyObject *self, PyObject *args)
+{
+    // Retorna tupla con datos de (win, lose, tie) a partir de dos pares (el del
+    // hero y el del villain) en 4 argumentos (cartas: h1, h2, v1, v2) con formato
+    // entero (0-51) o string (tipo 'Td').
+    struct Carta cartas[4];
+    int i;
+    PyObject *arg;
+    if(PySequence_Length(args) != 4)
+    {
+        PyErr_SetString(PyExc_TypeError, "Se esperan 4 argumentos.");
+        return NULL;
+    }
+    // Vamos a recoger argumentos y  almacenar las cartas en el formato correcto:
+    for(i = 0; i < 4; i++)
+    {
+        arg = PyTuple_GetItem(args, i);    // borrowed reference
+        if(PyLong_Check(arg))
+            cartas[i] = _intToCard(PyLong_AsLong(arg));
+        else if(PyUnicode_Check(arg))
+            cartas[i] = _strToCard(arg);
+        else
+        {
+            PyErr_SetString(PyExc_TypeError, "Argumento debe ser entero o string.");
+            return NULL;
+        }
+        if(cartas[i].rank == -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "Argumento debe ser 0-51 o tipo 'Td'.");
+            return NULL;
+        }
+    }
+    // Ya tenemos las cartas en 'cartas'
+    return _simHandVsHand(cartas);  // tal como recibimos ownership la pasamos
+}
 
 static PyObject *pl_rangeSet(PyObject *self, PyObject *args, PyObject *kwargs)
 {
@@ -249,6 +286,8 @@ static PyObject *test(PyObject *self, PyObject *args, PyObject *kwargs)
 
 // Relación de funciones a exportar:
 static PyMethodDef PokerlabFuns[] = {
+    {"pl_simHandVsHand", pl_simHandVsHand, METH_VARARGS,
+     "Retorna tupla con datos win, lose, tie de mano contra mano"},
     {"pl_rangeSet", (PyCFunction)pl_rangeSet, METH_VARARGS | METH_KEYWORDS,
      "Establece el rango actual (de hero o villain) a partir de un string"},
     {"pl_rangeGetPercent", pl_rangeGetPercent, METH_VARARGS,
