@@ -28,12 +28,15 @@ static _Bool _rangeTMP[13][13];
 // Funciones "privadas" *******************************************************
 
 // utils.c
-static _Bool        _charIsRank(char c);
-static int          _rankToNum(char c);
-static char         _numToRank(int n);
+static int          _rankToCoord(char c);
 static struct Carta _intToCard(int carta);
+static int          _cardToInt(struct Carta carta);
 static struct Carta _strToCard(PyObject *carta);
+static int          _comparaValores(struct Valor valH, struct Valor valV);
 static struct Valor _valorMano(struct Carta *cartas, int n);
+
+// simulations.c
+static PyObject * _simHandVsHand(struct Carta cartas[4]);
 
 // rangeparse.c
 static int   _rangeParseNextDelim(const char *buffer, int index);
@@ -59,6 +62,7 @@ static _Bool      _rangeCoordsToPar(int x, int y, char *par);
 
 // Funciones a exportar *******************************************************
 
+static PyObject *pl_simHandVsHand(PyObject *self, PyObject *args);
 static PyObject *pl_rangeSet(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject *pl_rangeGetPercent(PyObject *self, PyObject *args);
 static PyObject *pl_rangeGet(PyObject *self, PyObject *args, PyObject *kwargs);

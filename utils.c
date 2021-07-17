@@ -1,32 +1,12 @@
-static _Bool _charIsRank(char c)
+static int _rankToCoord(char c)
 {
-    // Retorna verdadero si el carácter es un rank válido.
-    char ranks[] = "23456789TJQKA";
-    for(int i = 0; i < 13; i++)
-        if(c == ranks[i])
-            return 1;
-    return 0;
-}
-
-static int _rankToNum(char c)
-{
-    // Retorna número (0-12) a partir de carácter de rank (2, 3,..., K, A)
-    // o -1 en caso de error.
-    char ranks[] = "23456789TJQKA";
+    // Retorna número (0-12) a partir de carácter de rank (A, K,..., 3, 2)
+    // para coordenada en la tabla preflop, o -1 en caso de error.
+    char ranks[] = "AKQJT98765432";
     for(int i = 0; i < 13; i++)
         if(c == ranks[i])
             return i;
     return -1;
-}
-
-static char _numToRank(int n)
-{
-    // Retorna carácter de rank (2, 3,..., K, A) a partir de número (0-12)
-    // o -1 en caso de error.
-    char ranks[] = "23456789TJQKA";
-    if(n < 0 || n > 12)
-        return -1;
-    return ranks[n];
 }
 
 static struct Carta _intToCard(int carta)
@@ -41,6 +21,11 @@ static struct Carta _intToCard(int carta)
     resul.suit = carta / 13;
     resul.rank = carta % 13;
     return resul;
+}
+
+static int _cardToInt(struct Carta carta)
+{
+    return carta.rank + carta.suit * 13;
 }
 
 static struct Carta _strToCard(PyObject *carta)
@@ -71,6 +56,24 @@ static struct Carta _strToCard(PyObject *carta)
     if(i == 4)
         resul.rank = -1;    // suit incorrecto
     return resul;
+}
+
+static int _comparaValores(struct Valor valH, struct Valor valV)
+{
+    // Compara los valores resultantes de dos manos. Retorna 1 si valH > valV,
+    // -1 si valH < valV, o 0 si son iguales
+    if(valH.valor > valV.valor)
+        return 1;
+    if(valH.valor < valV.valor)
+        return -1;
+    for(int i = 0; i < 5; i++)
+    {
+        if(valH.kickers[i] > valV.kickers[i])
+            return 1;
+        if(valH.kickers[i] < valV.kickers[i])
+            return -1;
+    }
+    return 0;
 }
 
 static struct Valor _valorMano(struct Carta *cartas, int n)

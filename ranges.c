@@ -309,11 +309,11 @@ static _Bool _rangeParToCoords(const char *par, int *xptr, int *yptr,
     if(strlen(par) == 2 && par[0] == par[1])    // pocket pair
     {
         int x;
-        x = _rankToNum(par[0]);
+        x = _rankToCoord(par[0]);
         if(x == -1)
             return 0;
-        *xptr = 12 - x;
-        *yptr = 12 - x;
+        *xptr = x;
+        *yptr = x;
         if(xptr2 && yptr2)    // si no son NULL
         {
             *xptr2 = -1;
@@ -323,31 +323,33 @@ static _Bool _rangeParToCoords(const char *par, int *xptr, int *yptr,
     else if(strlen(par) == 2 && par[0] != par[1])    // suitedness indefinida
     {
         int x, y;
-        x = _rankToNum(par[0]);
-        y = _rankToNum(par[1]);
+        x = _rankToCoord(par[0]);
+        y = _rankToCoord(par[1]);
         if(x == -1 || y == -1)
             return 0;
-        if(x < y)
+        if(x > y)  // '3K' o 'TQ' no es válido
             return 0;
-        *xptr = 12 - x;
-        *yptr = 12 - y;
+        *xptr = x;
+        *yptr = y;
         // En este caso, 'xptr2' y 'yptr2' no pueden ser NULL:
         if(!xptr2 || !yptr2)
             return 0;
-        *xptr2 = 12 - y;
-        *yptr2 = 12 - x;
+        *xptr2 = y;
+        *yptr2 = x;
     }
     else if(strlen(par) == 3)    // suitedness definida
     {
         int x, y;
-        x = _rankToNum(par[0]);
-        y = _rankToNum(par[1]);
+        x = _rankToCoord(par[0]);
+        y = _rankToCoord(par[1]);
         if(x == -1 || y == -1)
+            return 0;
+        if(x > y)  // '3K' o 'TQ' no es válido
             return 0;
         if(par[2] == 'o')
         {
-            *xptr = 12 - x;
-            *yptr = 12 - y;
+            *xptr = x;
+            *yptr = y;
             if(xptr2 && yptr2)    // si no son NULL
             {
                 *xptr2 = -1;
@@ -356,8 +358,8 @@ static _Bool _rangeParToCoords(const char *par, int *xptr, int *yptr,
         }
         else if(par[2] == 's')
         {
-            *xptr = 12 - y;
-            *yptr = 12 - x;
+            *xptr = y;
+            *yptr = x;
             if(xptr2 && yptr2)    // si no son NULL
             {
                 *xptr2 = -1;
