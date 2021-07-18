@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# genera todas las estadísticas (win, lose, tie) de enfrentamientos entre
+# genera todas las estadísticas (win, lose, split) de enfrentamientos entre
 # ranges simples preflop (entradas únicas en la tabla preflop son unos
 # rangos con 4, 6 o 12 combos: AKs, AKo, AA,...).
 
@@ -11,38 +11,24 @@ def rangeVsRange(rangeH, rangeV):
     combosPairs = ('cd', 'ch', 'cs', 'dh', 'ds', 'hs')
     combosSuited = ('cc', 'dd', 'hh', 'ss')
     combosOffsuit = ('cd', 'ch', 'cs', 'dc', 'dh', 'ds', 'hc', 'hd', 'hs', 'sc', 'sd', 'sh')
-    win = lose = tie = 0
-    # Veamos qué combos se deben considerar para cada range:
+    win = lose = split = 0
+    # Veamos qué combos se deben considerar:
     if rangeH[0] == rangeH[1]:    # pocket pair
-        combosH = combosPairs
+        combos = combosPairs
     elif rangeH[2] == 'o':    # offsuit
-        combosH = combosOffsuit
+        combos = combosOffsuit
     else:    # suited
-        combosH = combosSuited
-    # Villano ahora:
-    if rangeV[0] == rangeV[1]:    # pocket pair
-        combosV = combosPairs
-    elif rangeV[2] == 'o':    # offsuit
-        combosV = combosOffsuit
-    else:    # suited
-        combosV = combosSuited
+        combos = combosSuited
     # Empecemos el bucle:
-    for h in combosH:
-        for v in combosV:
-            # Generemos las 4 cartas de los dos combos a enfrentar:
-            h1 = rangeH[0] + h[0]
-            h2 = rangeH[1] + h[1]
-            v1 = rangeV[0] + v[0]
-            v2 = rangeV[1] + v[1]
-            # Ahora hay que comprobar que no haya cartas repetidas:
-            cartas = set([h1, h2, v1, v2])
-            if len(cartas) < 4:
-                continue
-            resul = pokerlab.pl_simHandVsHand(h1, h2, v1, v2)
-            win += resul[0]
-            lose += resul[1]
-            tie += resul[2]
-    return win, lose, tie
+    for combo in combos:
+        # Generemos las 2 cartas:
+        carta1 = rangeH[0] + combo[0]
+        carta2 = rangeH[1] + combo[1]
+        resul = pokerlab.pl_simHandVsRange(carta1, carta2, rangeV)
+        win += resul[0]
+        lose += resul[1]
+        split += resul[2]
+    return win, lose, split
 
 ranges = ('AA ', 'AKs', 'AKo', 'AQs', 'AQo', 'AJs', 'AJo', 'ATs', 'ATo', 'A9s', 'A9o', 'A8s', 'A8o',
           'A7s', 'A7o', 'A6s', 'A6o', 'A5s', 'A5o', 'A4s', 'A4o', 'A3s', 'A3o', 'A2s', 'A2o', 'KK ',
@@ -58,10 +44,17 @@ ranges = ('AA ', 'AKs', 'AKo', 'AQs', 'AQo', 'AJs', 'AJo', 'ATs', 'ATo', 'A9s', 
           '72o', '66 ', '65s', '65o', '64s', '64o', '63s', '63o', '62s', '62o', '55 ', '54s', '54o',
           '53s', '53o', '52s', '52o', '44 ', '43s', '43o', '42s', '42o', '33 ', '32s', '32o', '22 ')
 
+f = open("range_vs_range.csv", "wt")
+f.write("Hero;Villain;Win;Lose;Tie\n")
 print("Hero;Villain;Win;Lose;Tie")
+f.close()
 for r1 in range(169):
     for r2 in range(r1 + 1, 169):
         resul = rangeVsRange(ranges[r1], ranges[r2])
+        f = open("range_vs_range.csv", "at")
+        f.write(f"{ranges[r1].strip()};{ranges[r2].strip()};{resul[0]};{resul[1]};{resul[2]}\n")
         print(f"{ranges[r1].strip()};{ranges[r2].strip()};{resul[0]};{resul[1]};{resul[2]}")
+        f.write(f"{ranges[r2].strip()};{ranges[r1].strip()};{resul[1]};{resul[0]};{resul[2]}\n")
         print(f"{ranges[r2].strip()};{ranges[r1].strip()};{resul[1]};{resul[0]};{resul[2]}")
+        f.close()
 
