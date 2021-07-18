@@ -18,6 +18,11 @@ struct Carta
     int suit;    // 0-3
 };
 
+struct WLS
+{
+    int win, lose, split;
+};
+
 // Variables globales (no exportadas a Python) ********************************
 
 // Tablas preflop:
@@ -32,11 +37,14 @@ static int          _rankToCoord(char c);
 static struct Carta _intToCard(int carta);
 static int          _cardToInt(struct Carta carta);
 static struct Carta _strToCard(PyObject *carta);
+static struct Carta _charsToCard(const char cartaChars[2]);
 static int          _comparaValores(struct Valor valH, struct Valor valV);
 static struct Valor _valorMano(struct Carta *cartas, int n);
+static _Bool        _cartasRepetidas(struct Carta *cartas, int n);
 
 // simulations.c
-static PyObject * _simHandVsHand(struct Carta cartas[4]);
+static struct WLS _simHandVsHand(struct Carta cartas[4]);
+static struct WLS _simHandVsRange(struct Carta cartas[2], _Bool r[13][13]);
 
 // rangeparse.c
 static int   _rangeParseNextDelim(const char *buffer, int index);
@@ -63,6 +71,7 @@ static _Bool      _rangeCoordsToPar(int x, int y, char *par);
 // Funciones a exportar *******************************************************
 
 static PyObject *pl_simHandVsHand(PyObject *self, PyObject *args);
+static PyObject *pl_simHandVsRange(PyObject *self, PyObject *args);
 static PyObject *pl_rangeSet(PyObject *self, PyObject *args, PyObject *kwargs);
 static PyObject *pl_rangeGetPercent(PyObject *self, PyObject *args);
 static PyObject *pl_rangeGet(PyObject *self, PyObject *args, PyObject *kwargs);

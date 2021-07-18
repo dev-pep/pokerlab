@@ -58,6 +58,33 @@ static struct Carta _strToCard(PyObject *carta)
     return resul;
 }
 
+static struct Carta _charsToCard(const char cartaChars[2])
+{
+    // Retorna una estructura Carta a partir de un array de dos
+    // caracteres del tipo 'Td' (no null-terminated).
+    char ranks[] = "A23456789TJQK";
+    char suits[] = "cdhs";
+    struct Carta resul = {-1};  // valor de error, por defecto
+    int i;
+    for(i = 0; i < 13; i++)
+        if(cartaChars[0] == ranks[i])
+        {
+            resul.rank = i;
+            break;
+        }
+    if(i == 13)
+        return resul;    // rank incorrecto
+    for(i = 0; i < 4; i++)
+        if(cartaChars[1] == suits[i])
+        {
+            resul.suit = i;
+            break;
+        }
+    if(i == 4)
+        resul.rank = -1;    // suit incorrecto
+    return resul;
+}
+
 static int _comparaValores(struct Valor valH, struct Valor valV)
 {
     // Compara los valores resultantes de dos manos. Retorna 1 si valH > valV,
@@ -234,5 +261,18 @@ static struct Valor _valorMano(struct Carta *cartas, int n)
     resul.kickers[3] = val1[3];
     resul.kickers[4] = val1[4];
     return resul;
+}
+
+static _Bool _cartasRepetidas(struct Carta *cartas, int n)
+{
+    // Recibe un array de 'n' cartas. Si hay dos iguales,
+    // retorna 1. Si son todas distintas retorna 0.
+    int i, j;
+    for(i = 0; i < n - 1; i++)
+        for(j = i + 1; j < n; j++)
+            if(cartas[i].rank == cartas[j].rank &&
+                cartas[i].suit == cartas[j].suit)
+                return 1;
+    return 0;
 }
 

@@ -15,10 +15,12 @@
 
 static PyObject *pl_simHandVsHand(PyObject *self, PyObject *args)
 {
-    // Retorna tupla con datos de (win, lose, tie) a partir de dos pares (el del
+    // Retorna tupla con datos de (win, lose, split) a partir de dos pares (el del
     // hero y el del villain) en 4 argumentos (cartas: h1, h2, v1, v2) con formato
     // entero (0-51) o string (tipo 'Td').
     struct Carta cartas[4];
+    struct WLS resultado;
+    PyObject *resul;
     int i;
     PyObject *arg;
     if(PySequence_Length(args) != 4)
@@ -46,14 +48,89 @@ static PyObject *pl_simHandVsHand(PyObject *self, PyObject *args)
         }
     }
     // Ya tenemos las cartas en 'cartas'
-    return _simHandVsHand(cartas);  // tal como recibimos ownership la pasamos
+    if(_cartasRepetidas(cartas, 4))  // ¿alguna repetida?
+    {
+        PyErr_SetString(PyExc_ValueError, "Las cuatro cartas deben ser distintas.");
+        return NULL;
+    }
+    resultado = _simHandVsHand(cartas);
+    resul = Py_BuildValue("iii", resultado.win,
+        resultado.lose, resultado.split);  // new reference
+    return resul;    // pasamos ownership
+}
+
+static PyObject *pl_simHandVsRange(PyObject *self, PyObject *args)
+{
+    // Retorna tupla con datos (win, lose, split) a partir de un par de cartas:
+    // dos argumentos de tipo entero (0-51) o string (tipo 'Td'). Un tercer argumento
+    // indica el range con el que contrastar: False (default, actual del hero),
+    // True (actual del villano) o un string especificando el range. No se
+    // modifican los rangos actuales.
+    int i;
+    struct WLS resultado;
+    PyObject *o, *arg3 = Py_False;  // no refcount++ Py_False (var local)
+    struct Carta cartas[2];
+    _Bool (*r)[13];
+    int nargs = PySequence_Length(args);
+    if(nargs != 2 && nargs != 3)
+    {
+        PyErr_SetString(PyExc_TypeError, "Se esperan 2 o 3 argumentos.");
+        return NULL;
+    }
+    // Vamos a recoger las 2 cartas:
+    for(i = 0; i < 2; i++)
+    {
+        o = PyTuple_GetItem(args, i);    // borrowed reference
+        if(PyLong_Check(o))
+            cartas[i] = _intToCard(PyLong_AsLong(o));
+        else if(PyUnicode_Check(o))
+            cartas[i] = _strToCard(o);
+        else
+        {
+            PyErr_SetString(PyExc_TypeError, "Cartas deben ser entero o string.");
+            return NULL;
+        }
+        if(cartas[i].rank == -1)
+        {
+            PyErr_SetString(PyExc_ValueError, "Cartas deben ser 0-51 o tipo 'Td'.");
+            return NULL;
+        }
+    }
+    // Ya tenemos las cartas en 'cartas'
+    if(cartas[0].rank == cartas[1].rank && cartas[0].suit == cartas[1].suit)
+    {
+        PyErr_SetString(PyExc_ValueError, "Las cartas deben ser distintas.");
+        return NULL;
+    }
+    // Ahora, a por el range:
+    if(nargs == 3)
+        arg3 = PyTuple_GetItem(args, 2);
+    if(arg3 == Py_True)
+        r = _rangeVillain;
+    else if(arg3 == Py_False)
+        r = _rangeHero;
+    else if(PyUnicode_Check(arg3))
+    {
+        _rangeClear(_rangeTMP);
+        _rangeParse(PyUnicode_AsUTF8(arg3), 1);
+        r = _rangeTMP;
+    }
+    else
+    {
+        PyErr_SetString(PyExc_TypeError,
+            "Tercer argumento (opcional) debe ser booleano o string.");
+        return NULL;
+    }
+    resultado = _simHandVsRange(cartas, r);
+    o = Py_BuildValue("iii", resultado.win,
+        resultado.lose, resultado.split);  // new reference
+    return o;    // pasamos ownership
 }
 
 static PyObject *pl_rangeSet(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     // Establece tabla preflop (hero o villain) a partir de un string
     // que define el range.
-    // Véase rangeparse.c para sintaxis de un range de entrada.
     // Argumentos desde Python: (action='set', range='', villain=False)
     // posicionales o keyword.
     char *keys[] = {"action", "range", "villain", NULL};
@@ -122,7 +199,8 @@ static PyObject *pl_rangeSet(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *pl_rangeGetPercent(PyObject *self, PyObject *args)
 {
     // Retorna el porcentaje (float) que compone el range actual (de hero o villain).
-    // Argumentos desde Python: un booleano posicional opcional.
+    // Argumentos desde Python: un booleano posicional opcional (por defecto False,
+    // indicando hero).
     PyObject *villain = NULL, *resul;
     _Bool (*r)[13] = _rangeHero;
     if(!PyArg_ParseTuple(args, "|O", &villain))
@@ -183,7 +261,8 @@ static PyObject *pl_rangeGet(PyObject *self, PyObject *args, PyObject *kwargs)
 static PyObject *pl_rangePrintTable(PyObject *self, PyObject *args)
 {
     // Muestra tabla de range actual (de hero o villain).
-    // Argumentos desde Python: un booleano posicional opcional.
+    // Argumentos desde Python: un booleano posicional opcional, por defecto
+    // False (indicando hero).
     PyObject *villain = NULL;
     _Bool (*r)[13] = _rangeHero;
     if(!PyArg_ParseTuple(args, "|O", &villain))
@@ -244,6 +323,11 @@ static PyObject *pl_valorMano(PyObject *self, PyObject *args)
         cartas[i] = c;
     }
     // Ya tenemos las cartas en 'cartas'
+    if(_cartasRepetidas(cartas, numargs))
+    {
+        PyErr_SetString(PyExc_ValueError, "Las cartas deben ser distintas entre sí.");
+        return NULL;
+    }
     resultado = _valorMano(cartas, numargs);
     i = 0;
     while(resultado.kickers[i] != -1)
@@ -287,7 +371,9 @@ static PyObject *test(PyObject *self, PyObject *args, PyObject *kwargs)
 // Relación de funciones a exportar:
 static PyMethodDef PokerlabFuns[] = {
     {"pl_simHandVsHand", pl_simHandVsHand, METH_VARARGS,
-     "Retorna tupla con datos win, lose, tie de mano contra mano"},
+     "Retorna tupla con datos win, lose, split de mano contra mano"},
+    {"pl_simHandVsRange", pl_simHandVsRange, METH_VARARGS,
+     "Retorna tupla con datos win, lose, split de mano contra un range"},
     {"pl_rangeSet", (PyCFunction)pl_rangeSet, METH_VARARGS | METH_KEYWORDS,
      "Establece el rango actual (de hero o villain) a partir de un string"},
     {"pl_rangeGetPercent", pl_rangeGetPercent, METH_VARARGS,
