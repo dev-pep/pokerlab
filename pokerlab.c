@@ -1,8 +1,8 @@
-#include "pokerlab.h"
-
 // No podemos organizar el módulo en object files, porque todos los elementos
 // deben tener linkage interno. Por lo tanto solo podemos tener una translation
 // unit (no procede Makefile).
+
+#include "pokerlab.h"
 
 // Definición de funciones "privadas" *****************************************
 
@@ -13,9 +13,9 @@
 
 // Definición de funciones a exportar *****************************************
 
-static PyObject *pl_simHandVsHand(PyObject *self, PyObject *args)
+static PyObject *simHandVsHand(PyObject *self, PyObject *args)
 {
-    // Retorna tupla con datos de (win, lose, split) a partir de dos pares (el del
+    // Retorna tupla con datos de (win, lose, tie) a partir de dos pares (el del
     // hero y el del villain) en 4 argumentos (cartas: h1, h2, v1, v2) con formato
     // entero (0-51) o string (tipo 'Td').
     struct Carta cartas[4];
@@ -55,13 +55,13 @@ static PyObject *pl_simHandVsHand(PyObject *self, PyObject *args)
     }
     resultado = _simHandVsHand(cartas);
     resul = Py_BuildValue("iii", resultado.win,
-        resultado.lose, resultado.split);  // new reference
+        resultado.lose, resultado.tie);  // new reference
     return resul;    // pasamos ownership
 }
 
-static PyObject *pl_simHandVsRange(PyObject *self, PyObject *args)
+static PyObject *simHandVsRange(PyObject *self, PyObject *args)
 {
-    // Retorna tupla con datos (win, lose, split) a partir de un par de cartas:
+    // Retorna tupla con datos (win, lose, tie) a partir de un par de cartas:
     // dos argumentos de tipo entero (0-51) o string (tipo 'Td'). Un tercer argumento
     // indica el range con el que contrastar: False (default, actual del hero),
     // True (actual del villano) o un string especificando el range. No se
@@ -112,7 +112,12 @@ static PyObject *pl_simHandVsRange(PyObject *self, PyObject *args)
     else if(PyUnicode_Check(arg3))
     {
         _rangeClear(_rangeTMP);
-        _rangeParse(PyUnicode_AsUTF8(arg3), 1);
+        if(!_rangeParse(PyUnicode_AsUTF8(arg3), 1))
+        {
+            PyErr_SetString(PyExc_ValueError,
+                "Formato incorrecto.");
+            return NULL;
+        }
         r = _rangeTMP;
     }
     else
@@ -123,11 +128,56 @@ static PyObject *pl_simHandVsRange(PyObject *self, PyObject *args)
     }
     resultado = _simHandVsRange(cartas, r);
     o = Py_BuildValue("iii", resultado.win,
-        resultado.lose, resultado.split);  // new reference
+        resultado.lose, resultado.tie);  // new reference
     return o;    // pasamos ownership
 }
 
-static PyObject *pl_rangeSet(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *simRangeVsRange(PyObject *self, PyObject *args)
+{
+    // Retorna tupla con datos de (win, lose, tie) de un range contra otro.
+    // Sin argumentos, usa los ranges actuales de hero y villain.
+    // Con dos strings, usa los dos rangos especificados (no se tocan los actuales).
+    struct WLS resultado;
+    PyObject *resul;
+    const char *str1, *str2;
+    int nargs = PySequence_Length(args);
+    if(nargs == 0)
+        resultado = _simRangeVsRange(_rangeHero, _rangeVillain);
+    else if(nargs == 2)
+    {
+        if(!PyArg_ParseTuple(args, "ss", &str1, &str2))
+        {
+            PyErr_SetString(PyExc_TypeError, "Se esperan 2 strings.");
+            return NULL;
+        }
+        _rangeClear(_rangeTMP);
+        if(!_rangeParse(str2, 1))
+        {
+            PyErr_SetString(PyExc_ValueError,
+                "Formato incorrecto.");
+            return NULL;
+        }
+        _rangeCopy(_rangeTMP, _rangeTMP2);
+        _rangeClear(_rangeTMP);
+        if(!_rangeParse(str1, 1))
+        {
+            PyErr_SetString(PyExc_ValueError,
+                "Formato incorrecto.");
+            return NULL;
+        }
+        resultado = _simRangeVsRange(_rangeTMP, _rangeTMP2);
+    }
+    else
+    {
+        PyErr_SetString(PyExc_TypeError, "Se esperan 0 o 2 argumentos.");
+        return NULL;
+    }
+    resul = Py_BuildValue("KKK", resultado.win,
+        resultado.lose, resultado.tie);  // new reference
+    return resul;    // pasamos ownership
+}
+
+static PyObject *rangeSet(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     // Establece tabla preflop (hero o villain) a partir de un string
     // que define el range.
@@ -196,7 +246,7 @@ static PyObject *pl_rangeSet(PyObject *self, PyObject *args, PyObject *kwargs)
     return _rangeGetString(r);
 }
 
-static PyObject *pl_rangeGetPercent(PyObject *self, PyObject *args)
+static PyObject *rangeGetPercent(PyObject *self, PyObject *args)
 {
     // Retorna el porcentaje (float) que compone el range actual (de hero o villain).
     // Argumentos desde Python: un booleano posicional opcional (por defecto False,
@@ -225,7 +275,7 @@ static PyObject *pl_rangeGetPercent(PyObject *self, PyObject *args)
     return resul;
 }
 
-static PyObject *pl_rangeGet(PyObject *self, PyObject *args, PyObject *kwargs)
+static PyObject *rangeGet(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     // Retorna en un string el range actual (hero o villain), o la
     // tabla preflop en una tupla.
@@ -258,7 +308,7 @@ static PyObject *pl_rangeGet(PyObject *self, PyObject *args, PyObject *kwargs)
         return _rangeGetString(r);
 }
 
-static PyObject *pl_rangePrintTable(PyObject *self, PyObject *args)
+static PyObject *rangeShow(PyObject *self, PyObject *args)
 {
     // Muestra tabla de range actual (de hero o villain).
     // Argumentos desde Python: un booleano posicional opcional, por defecto
@@ -286,7 +336,7 @@ static PyObject *pl_rangePrintTable(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject *pl_valorMano(PyObject *self, PyObject *args)
+static PyObject *valorMano(PyObject *self, PyObject *args)
 {
     // Retorna valor de la mano en una tupla (figura + kickers).
     // Argumentos desde Python: 5 o 7 cartas de tipo entero (0-51) o
@@ -370,19 +420,21 @@ static PyObject *test(PyObject *self, PyObject *args, PyObject *kwargs)
 
 // Relación de funciones a exportar:
 static PyMethodDef PokerlabFuns[] = {
-    {"pl_simHandVsHand", pl_simHandVsHand, METH_VARARGS,
-     "Retorna tupla con datos win, lose, split de mano contra mano"},
-    {"pl_simHandVsRange", pl_simHandVsRange, METH_VARARGS,
-     "Retorna tupla con datos win, lose, split de mano contra un range"},
-    {"pl_rangeSet", (PyCFunction)pl_rangeSet, METH_VARARGS | METH_KEYWORDS,
+    {"simHandVsHand", simHandVsHand, METH_VARARGS,
+     "Retorna tupla con datos win, lose, tie de mano contra mano"},
+    {"simHandVsRange", simHandVsRange, METH_VARARGS,
+     "Retorna tupla con datos win, lose, tie de mano contra un range"},
+    {"simRangeVsRange", simRangeVsRange, METH_VARARGS,
+     "Retorna tupla con datos win, lose, tie de range contra un range"},
+    {"rangeSet", (PyCFunction)rangeSet, METH_VARARGS | METH_KEYWORDS,
      "Establece el rango actual (de hero o villain) a partir de un string"},
-    {"pl_rangeGetPercent", pl_rangeGetPercent, METH_VARARGS,
+    {"rangeGetPercent", rangeGetPercent, METH_VARARGS,
      "Retorna porcentaje del rango actual (de hero o villain) en un float"},
-    {"pl_rangeGet", (PyCFunction)pl_rangeGet, METH_VARARGS | METH_KEYWORDS,
+    {"rangeGet", (PyCFunction)rangeGet, METH_VARARGS | METH_KEYWORDS,
      "Retorna string o tupla que define el rango actual (de hero o villain)"},
-    {"pl_rangePrintTable", pl_rangePrintTable, METH_VARARGS,
+    {"rangeShow", rangeShow, METH_VARARGS,
      "Muestra el rango actual (de hero o villain) en una tabla"},
-    {"pl_valorMano", pl_valorMano, METH_VARARGS,
+    {"valorMano", valorMano, METH_VARARGS,
      "Comprueba el valor de una mano (5 o 7 cartas) y retorna tupla descriptiva"},
     {"test", (PyCFunction)test, METH_VARARGS | METH_KEYWORDS,
      "Función inútil para hacer pruebas"},

@@ -2,5 +2,5 @@
 *.o
 *.swp
 *.csv
-python/test.py
+test.py
 

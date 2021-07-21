@@ -1,5 +1,6 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
+#include <stdint.h>
 
 // Estructuras y enumeraciones ************************************************
 
@@ -20,15 +21,19 @@ struct Carta
 
 struct WLS
 {
-    int win, lose, split;
+    uint64_t win, lose, tie;
 };
 
 // Variables globales (no exportadas a Python) ********************************
 
-// Tablas preflop:
+// Tabla Range Vs Range:
+#include "rangetable.h"
+
+// Tablas con ranges preflop:
 static _Bool _rangeHero[13][13];    // [x][y], con [0][0] upper left
 static _Bool _rangeVillain[13][13];
 static _Bool _rangeTMP[13][13];
+static _Bool _rangeTMP2[13][13];
 
 // Funciones "privadas" *******************************************************
 
@@ -45,6 +50,7 @@ static _Bool        _cartasRepetidas(struct Carta *cartas, int n);
 // simulations.c
 static struct WLS _simHandVsHand(struct Carta cartas[4]);
 static struct WLS _simHandVsRange(struct Carta cartas[2], _Bool r[13][13]);
+static struct WLS _simRangeVsRange(_Bool rH[13][13], _Bool rV[13][13]);
 
 // rangeparse.c
 static int   _rangeParseNextDelim(const char *buffer, int index);
@@ -70,12 +76,13 @@ static _Bool      _rangeCoordsToPar(int x, int y, char *par);
 
 // Funciones a exportar *******************************************************
 
-static PyObject *pl_simHandVsHand(PyObject *self, PyObject *args);
-static PyObject *pl_simHandVsRange(PyObject *self, PyObject *args);
-static PyObject *pl_rangeSet(PyObject *self, PyObject *args, PyObject *kwargs);
-static PyObject *pl_rangeGetPercent(PyObject *self, PyObject *args);
-static PyObject *pl_rangeGet(PyObject *self, PyObject *args, PyObject *kwargs);
-static PyObject *pl_rangePrintTable(PyObject *self, PyObject *args);
-static PyObject *pl_valorMano(PyObject *self, PyObject *args);
+static PyObject *simHandVsHand(PyObject *self, PyObject *args);
+static PyObject *simHandVsRange(PyObject *self, PyObject *args);
+static PyObject *simRangeVsRange(PyObject *self, PyObject *args);
+static PyObject *rangeSet(PyObject *self, PyObject *args, PyObject *kwargs);
+static PyObject *rangeGetPercent(PyObject *self, PyObject *args);
+static PyObject *rangeGet(PyObject *self, PyObject *args, PyObject *kwargs);
+static PyObject *rangeShow(PyObject *self, PyObject *args);
+static PyObject *valorMano(PyObject *self, PyObject *args);
 static PyObject *test(PyObject *self, PyObject *args, PyObject *kwargs);
 

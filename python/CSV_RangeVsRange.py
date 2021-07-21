@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 
-# genera todas las estadísticas (win, lose, split) de enfrentamientos entre
+# genera todas las estadísticas (win, lose, tie) de enfrentamientos entre
 # ranges simples preflop (entradas únicas en la tabla preflop son unos
 # rangos con 4, 6 o 12 combos: AKs, AKo, AA,...).
+# Con 0 argumentos genera toda la tabla. Con 1 argumento genera los datos
+# de ese range. Con dos argumentos genera desde el primero hasta el segundo
+# (el segundo debe ser posterior al primero en la lista).
 
 import pokerlab
+import sys
 
 def rangeVsRange(rangeH, rangeV):
     # suit combinations:
@@ -24,7 +28,7 @@ def rangeVsRange(rangeH, rangeV):
         # Generemos las 2 cartas:
         carta1 = rangeH[0] + combo[0]
         carta2 = rangeH[1] + combo[1]
-        resul = pokerlab.pl_simHandVsRange(carta1, carta2, rangeV)
+        resul = pokerlab.simHandVsRange(carta1, carta2, rangeV)
         win += resul[0]
         lose += resul[1]
         split += resul[2]
@@ -44,17 +48,43 @@ ranges = ('AA ', 'AKs', 'AKo', 'AQs', 'AQo', 'AJs', 'AJo', 'ATs', 'ATo', 'A9s', 
           '72o', '66 ', '65s', '65o', '64s', '64o', '63s', '63o', '62s', '62o', '55 ', '54s', '54o',
           '53s', '53o', '52s', '52o', '44 ', '43s', '43o', '42s', '42o', '33 ', '32s', '32o', '22 ')
 
-f = open("range_vs_range.csv", "wt")
-f.write("Hero;Villain;Win;Lose;Tie\n")
-print("Hero;Villain;Win;Lose;Tie")
-f.close()
-for r1 in range(169):
-    for r2 in range(r1 + 1, 169):
-        resul = rangeVsRange(ranges[r1], ranges[r2])
-        f = open("range_vs_range.csv", "at")
-        f.write(f"{ranges[r1].strip()};{ranges[r2].strip()};{resul[0]};{resul[1]};{resul[2]}\n")
-        print(f"{ranges[r1].strip()};{ranges[r2].strip()};{resul[0]};{resul[1]};{resul[2]}")
-        f.write(f"{ranges[r2].strip()};{ranges[r1].strip()};{resul[1]};{resul[0]};{resul[2]}\n")
-        print(f"{ranges[r2].strip()};{ranges[r1].strip()};{resul[1]};{resul[0]};{resul[2]}")
-        f.close()
+inicial = final = -1
+if len(sys.argv) > 3:
+    print("Se esperan 0, 1 o 2 argumentos del tipo AKs, JJ, o Q9o con el par inicial y final.\n" +
+        "0 argumentos equivale a AA 22. 1 argumento lo contará como inicial y final.\n")
+elif len(sys.argv) == 1:
+    inicial = 0
+    final = 168
+else:
+    arg1 = sys.argv[1]
+    if len(sys.argv) == 3:
+        arg2 = sys.argv[2]
+    else:
+        arg2 = arg1
+    for i in range(169):
+        if arg1 == ranges[i].strip():
+            inicial = i
+        if arg2 == ranges[i].strip():
+            final = i
+if inicial == -1 or final == -1 or final < inicial:
+    print("Formato incorrecto.\n")
+else:
+    if inicial != final:
+        filename = f"range_vs_range_{ranges[inicial].strip()}-{ranges[final].strip()}.csv"
+    else:
+        filename = f"range_vs_range_{ranges[inicial].strip()}.csv"
+    f = open(filename, "wt")
+    f.write("Hero;Villain;Win;Lose;Tie\n")
+    print("Hero;Villain;Win;Lose;Tie")
+    f.close()
+    for r1 in range(inicial, final + 1):
+        for r2 in range(r1, 169):
+            resul = rangeVsRange(ranges[r1], ranges[r2])
+            f = open(filename, "at")
+            f.write(f"{ranges[r1].strip()};{ranges[r2].strip()};{resul[0]};{resul[1]};{resul[2]}\n")
+            print(f"{ranges[r1].strip()};{ranges[r2].strip()};{resul[0]};{resul[1]};{resul[2]}")
+            if r1 != r2:
+                f.write(f"{ranges[r2].strip()};{ranges[r1].strip()};{resul[1]};{resul[0]};{resul[2]}\n")
+                print(f"{ranges[r2].strip()};{ranges[r1].strip()};{resul[1]};{resul[0]};{resul[2]}")
+            f.close()
 

@@ -27,8 +27,8 @@ def procesa(pocket, h1, h2):
                             for a5 in range(a4+1, 52):
                                 if a5 == v1 or a5 == v2 or a5 == h1 or a5 == h2:
                                     continue
-                                hero = pokerlab.pl_valorMano(a1, a2, a3, a4, a5, h1, h2)
-                                vill = pokerlab.pl_valorMano(a1, a2, a3, a4, a5, v1, v2)
+                                hero = pokerlab.valorMano(a1, a2, a3, a4, a5, h1, h2)
+                                vill = pokerlab.valorMano(a1, a2, a3, a4, a5, v1, v2)
                                 if hero > vill:
                                     win += 1
                                 elif vill > hero:
