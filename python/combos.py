@@ -67,7 +67,7 @@ manos = ["Carta alta", "Pareja", "Doble pareja", "Trío", "Escalera",
 frecuencias = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 num = 1
 for a in combos(52, 5):
-    val = pokerlab.pl_valorMano(*a)
+    val = pokerlab.valorMano(*a)
     frecuencias[val[0]] += 1
     print(num, "-", a, "==>", val)
     num += 1
