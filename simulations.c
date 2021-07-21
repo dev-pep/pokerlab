@@ -1,8 +1,8 @@
-static struct WLS _simHandVsHand(struct Carta cartas[4])
+static struct WLT _simHandVsHand(struct Carta cartas[4])
 {
     // Recibe en 'cartas' el pocket del hero y del villano (h1, h2, v1, v2).
     // Retorna una estructura con datos (win, lose, tie).
-    struct WLS resul = {0, 0, 0};
+    struct WLT resul = {0, 0, 0};
     int c1, c2, c3, c4, c5;
     struct Carta c[7];
     int h1 = _cardToInt(cartas[0]), h2 = _cardToInt(cartas[1]);
@@ -55,12 +55,12 @@ static struct WLS _simHandVsHand(struct Carta cartas[4])
     return resul;
 }
 
-static struct WLS _simHandVsRange(struct Carta cartas[2], _Bool r[13][13])
+static struct WLT _simHandVsRange(struct Carta cartas[2], _Bool r[13][13])
 {
     // Recibe en 'cartas' dos simples cartas que se enfrentarán al
     // range 'r'. Retorna una tupla con los valores (win, lose, tie).
     // Pasa ownership de la nueva tupla al caller.
-    struct WLS resul = {0,0,0}, resulParcial;
+    struct WLT resul = {0,0,0}, resulParcial;
     int x, y, i, j;
     char suits[] = {'c', 'd', 'h', 's'}, par[4];
     char cartaStr[2];
@@ -143,10 +143,12 @@ static struct WLS _simHandVsRange(struct Carta cartas[2], _Bool r[13][13])
     return resul;
 }
 
-static struct WLS _simRangeVsRange(_Bool rH[13][13], _Bool rV[13][13])
+static struct WLT _simRangeVsRange(_Bool rH[13][13], _Bool rV[13][13])
 {
+    // Recibe dos ranges y los compara mediante la tabla de range vs range.
+    // Retorna el total de (win, lose, tie).
     int i, j, k, l, n, n1 = -1, n2 = -1;
-    struct WLS resul = {0, 0, 0};
+    struct WLT resul = {0, 0, 0};
     char parH[4], parV[4];
     char *ranges[] = {"AA ", "AKs", "AKo", "AQs", "AQo", "AJs", "AJo", "ATs",
         "ATo", "A9s", "A9o", "A8s", "A8o", "A7s", "A7o", "A6s", "A6o", "A5s",

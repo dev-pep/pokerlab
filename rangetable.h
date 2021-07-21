@@ -1,3 +1,6 @@
+// Tabla de range vs range preflop en orden AA, AKs, AKo, KK, KQs,... 32o, 22.
+// Cada entrada representa (win, lose, tie).
+
 static uint32_t _rangeTable[169][169][3] = {
     {
         { 223260, 223260, 9827304 },

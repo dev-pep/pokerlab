@@ -19,7 +19,7 @@ struct Carta
     int suit;    // 0-3
 };
 
-struct WLS
+struct WLT
 {
     uint64_t win, lose, tie;
 };
@@ -48,9 +48,9 @@ static struct Valor _valorMano(struct Carta *cartas, int n);
 static _Bool        _cartasRepetidas(struct Carta *cartas, int n);
 
 // simulations.c
-static struct WLS _simHandVsHand(struct Carta cartas[4]);
-static struct WLS _simHandVsRange(struct Carta cartas[2], _Bool r[13][13]);
-static struct WLS _simRangeVsRange(_Bool rH[13][13], _Bool rV[13][13]);
+static struct WLT _simHandVsHand(struct Carta cartas[4]);
+static struct WLT _simHandVsRange(struct Carta cartas[2], _Bool r[13][13]);
+static struct WLT _simRangeVsRange(_Bool rH[13][13], _Bool rV[13][13]);
 
 // rangeparse.c
 static int   _rangeParseNextDelim(const char *buffer, int index);

@@ -19,7 +19,7 @@ static PyObject *simHandVsHand(PyObject *self, PyObject *args)
     // hero y el del villain) en 4 argumentos (cartas: h1, h2, v1, v2) con formato
     // entero (0-51) o string (tipo 'Td').
     struct Carta cartas[4];
-    struct WLS resultado;
+    struct WLT resultado;
     PyObject *resul;
     int i;
     PyObject *arg;
@@ -67,7 +67,7 @@ static PyObject *simHandVsRange(PyObject *self, PyObject *args)
     // True (actual del villano) o un string especificando el range. No se
     // modifican los rangos actuales.
     int i;
-    struct WLS resultado;
+    struct WLT resultado;
     PyObject *o, *arg3 = Py_False;  // no refcount++ Py_False (var local)
     struct Carta cartas[2];
     _Bool (*r)[13];
@@ -137,7 +137,7 @@ static PyObject *simRangeVsRange(PyObject *self, PyObject *args)
     // Retorna tupla con datos de (win, lose, tie) de un range contra otro.
     // Sin argumentos, usa los ranges actuales de hero y villain.
     // Con dos strings, usa los dos rangos especificados (no se tocan los actuales).
-    struct WLS resultado;
+    struct WLT resultado;
     PyObject *resul;
     const char *str1, *str2;
     int nargs = PySequence_Length(args);
