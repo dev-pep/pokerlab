@@ -85,6 +85,21 @@ static struct Carta _charsToCard(const char cartaChars[2])
     return resul;
 }
 
+static _Bool _cardToChars(struct Carta carta, char *cartaChars)
+{
+    // Recibe una estructura carta y la convierte en caracteres (del tipo 'Td').
+    // El apuntador recibido debe tener espacio para 3 caracteres.
+    // Si funciona bien retorna 1 (si no 0).
+    char ranks[] = "A23456789TJQK";
+    char suits[] = "cdhs";
+    if(carta.rank < 0 || carta.rank > 12 || carta.suit < 0 || carta.suit > 3)
+        return 0;
+    cartaChars[0] = ranks[carta.rank];
+    cartaChars[1] = suits[carta.suit];
+    cartaChars[2] = '\x0';
+    return 1;
+}
+
 static int _comparaValores(struct Valor valH, struct Valor valV)
 {
     // Compara los valores resultantes de dos manos. Retorna 1 si valH > valV,
