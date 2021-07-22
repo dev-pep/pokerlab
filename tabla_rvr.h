@@ -1,7 +1,9 @@
 // Tabla de range vs range preflop en orden AA, AKs, AKo, KK, KQs,... 32o, 22.
-// Cada entrada representa (win, lose, tie).
+// Cada entrada representa (win, lose, tie), representando todos los combos
+// posibles del primer range de la tabla preflop contra el segundo.
+// Utilizado por la función _simRangeVsRange().
 
-static uint32_t _rangeTable[169][169][3] = {
+static uint32_t _tablaRanges[169][169][3] = {
     {
         { 223260, 223260, 9827304 },
         { 17924040, 2365572, 258036 },

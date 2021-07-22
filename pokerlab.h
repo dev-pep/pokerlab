@@ -27,7 +27,10 @@ struct WLT
 // Variables globales (no exportadas a Python) ********************************
 
 // Tabla Range Vs Range:
-#include "rangetable.h"
+#include "tabla_rvr.h"
+
+// Tabla Hand Vs Range:
+#include "tabla_hvr.h"
 
 // Tablas con ranges preflop:
 static _Bool _rangeHero[13][13];    // [x][y], con [0][0] upper left
@@ -43,6 +46,7 @@ static struct Carta _intToCard(int carta);
 static int          _cardToInt(struct Carta carta);
 static struct Carta _strToCard(PyObject *carta);
 static struct Carta _charsToCard(const char cartaChars[2]);
+static _Bool        _cardToChars(struct Carta carta, char *cartaChars);
 static int          _comparaValores(struct Valor valH, struct Valor valV);
 static struct Valor _valorMano(struct Carta *cartas, int n);
 static _Bool        _cartasRepetidas(struct Carta *cartas, int n);
